@@ -1,6 +1,8 @@
 ﻿using HtmlAgilityPack;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium;
+using AngleSharp.Common;
+using AngleSharp.Dom;
 
 namespace WebScraperApi;
 
@@ -62,8 +64,10 @@ public static class WebScraper
             //var details_btns = card.FindElements(By.XPath("//div[@class='tender-card rounded card mt-0 mb-0']//div[@class='row']//div[@class='col-12 col-md-9 p-0']//div[@class='tender-metadata border-left border-bottom']//div[@class='row']//div[@class='col-12 border-bottom']//div[@class='row']//div[@class='col-12']//div[@class='pb-2']//div[@class='pull-right']"));
             var details_btn = card.FindElement(By.ClassName("pull-right"));
             details_btn.Click();
-            GetDetails(driver);
 
+            GetDetails(driver);
+            driver.Navigate().GoToUrl(url);
+            break;
         }
         GetPagination(driver);
         // close the browser and release its resources
@@ -91,13 +95,14 @@ public static class WebScraper
                 }
             }
         }
-        driver.Navigate().Back();
+
     }
     static void GetPagination(ChromeDriver driver)
     {
-        var pages = driver.FindElements(By.ClassName("pagination"));
+        var pages = driver.FindElements(By.ClassName("pagination-primary"));
         foreach (var page in pages)
         {
+            var items = page.FindElements(By.ClassName("page-item"));
             var next = page.GetAttribute("aria-label");
             var isDisabled = page.GetAttribute("disabled");
             if (next == "Next" && string.IsNullOrEmpty(isDisabled))
