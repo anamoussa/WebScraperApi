@@ -1,4 +1,4 @@
-using WebScraperApi;
+using Carter;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddCarter();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -16,5 +17,5 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.Scraping();
+app.MapCarter();
 app.Run();
