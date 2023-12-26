@@ -3,27 +3,78 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium;
 using Carter;
 using OpenQA.Selenium.Support.UI;
+using WebScraperApi.Services;
+using WebScraperApi.Models;
 
 namespace WebScraperApi;
 
 public class WebScraper : ICarterModule
 {
     private IDictionary<string, object> DetailsDict = new Dictionary<string, object>();
-    private List<List<string>> DetailsList = new List<List<string>>();
+    private List<DetailsForVisitor> DetailsForVisitorsList = new List<DetailsForVisitor>();
+    private List<GetTenderDates> GetTenderDatesList = new List<GetTenderDates>();
+    private List<GetAwardingResult> GetAwardingResultsList = new List<GetAwardingResult>();
+    private List<GetRelationsDetail> GetRelationsDetailsList = new List<GetRelationsDetail>();
+
+    private string UrlDetailsForVisitor = $"https://tenders.etimad.sa/Tender/DetailsForVisitor?tenderIdStr=";
+    private string UrlGetTenderDates = "https://tenders.etimad.sa/Tender/GetTenderDatesViewComponenet?tenderIdStr=";
+    private string UrlGetAwardingResult = "https://tenders.etimad.sa/Tender/GetAwardingResultsForVisitorViewComponenet?tenderIdStr=";
+    private string UrlGetRelationsDetail = "https://tenders.etimad.sa/Tender/GetRelationsDetailsViewComponenet?tenderIdStr=";
+
+
+
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/webscraper");
-        group.MapGet("/htmlagilitypack", () =>
-        {
-            var data = GetPageData("https://tenders.etimad.sa/Tender/AllTendersForVisitor");
-            return data;
-        }).WithOpenApi();
         group.MapGet("/selenium", () =>
         {
             var data = GetDataWithSelenium("https://tenders.etimad.sa/Tender/AllTendersForVisitor");
             return data;
         }).WithOpenApi();
+        group.MapGet("/getAllData", async () =>
+        {
+            var CardsBasicData = await GetDataService.GetTaskAsync();
+            var CardsBasicDataIds = CardsBasicData.Select(t => t.tenderIdString).ToList();
+
+        }).WithOpenApi();
     }
+
+    private void GetCardsDetails(List<string> tenderIDs)
+    {
+
+        foreach (var tenderID in tenderIDs)
+        {
+            DetailsForVisitor(tenderID);
+            GetTenderDates(tenderID);
+            GetAwardingResult(tenderID);
+            GetRelationsDetails(tenderID);
+        }
+        //add DetailsForVisitorsList to DB table and save Changes 
+    }
+    private void DetailsForVisitor(string tenderID)
+    {
+        // get data from url using selnum (baseURL+tenderID)
+        // save data to DetailsForVisitorsList 
+
+    }
+    private void GetTenderDates(string tenderID)
+    {
+
+    } 
+    private void GetAwardingResult(string tenderID)
+    {
+
+    }
+    private void GetRelationsDetails(string tenderID)
+    {
+
+    }
+
+
+
+
+
+
     private string GetPageData(string url)
     {
         HtmlWeb htmlWeb = new HtmlWeb()
@@ -202,26 +253,11 @@ public class WebScraper : ICarterModule
                 carddetails.Add(info);
                 // DetailsDict.Add(title, info);
             }
-            DetailsList.Add(carddetails);
+            //DetailsList.Add(carddetails);
         }
     }
     #endregion
 
 
-    private void GetPagination(ChromeDriver driver)
-    {
-        var page = driver.FindElements(By.ClassName("pagination-primary"))[0];
-        var items = page.FindElements(By.ClassName("page-item"));
-        foreach (var item in items)
-        {
-            var btn = item.FindElement(By.ClassName("page-link"));
-            var next = btn.GetAttribute("aria-label");
-            var isDisabled = btn.GetAttribute("disabled");
-            if (next == "Next" && string.IsNullOrEmpty(isDisabled))
-            {
-                btn.Click();
-            }
-        }
 
-    }
 }
