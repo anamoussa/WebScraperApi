@@ -1,3 +1,4 @@
+using AngleSharp;
 using Carter;
 using Microsoft.EntityFrameworkCore;
 using WebScraperApi.Handlers;
@@ -12,7 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<ScrapDBContext>(opt => opt.UseSqlServer(builder.Configuration["ConnectionStrings:DBConnection"]));
+//builder.Services.AddDbContext<ScrapDBContext>(opt => opt.UseSqlServer(builder.Configuration["ConnectionStrings:DBConnection"]));
+builder.Services.AddDbContext<ScrapDBContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DBConnection"))
+);
 builder.Services.AddScoped<IDataService, DataService>();
 builder.Services.AddScoped<IScraperService, ScraperService>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

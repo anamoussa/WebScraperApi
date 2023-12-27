@@ -1,9 +1,17 @@
-﻿namespace WebScraperApi.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+
+namespace WebScraperApi.Models
 {
     public class AwardedSupplier
     {
-        public string supplier_name { get; set; }
-        public double financial_offer { get; set; }
-        public double award_value { get; set; }
+        [Key]
+        public int Id { get; set; }
+        [ForeignKey("GetAwardingResult")]
+        public int GetAwardingResultId { get; set; }
+        public virtual GetAwardingResult? GetAwardingResult { get; set; }
+        public string Supplier_name { get; set; }
+        public double Financial_offer { get; set; }
+        public double Award_value { get; set; }
     }
 }

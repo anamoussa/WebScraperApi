@@ -1,7 +1,15 @@
-﻿namespace WebScraperApi.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+
+namespace WebScraperApi.Models
 {
-    public class GetTenderDates
+    public class GetTenderDate
     {
+        [Key]
+        public int Id { get; set; }
+        [ForeignKey("CardBasicData")]
+        public string tenderIdString { get; set; }
+        public virtual CardBasicData? CardBasicData { get; set; }
         public DateOnly? lastEnqueriesDate { get; set; }
         public string lastEnqueriesDateHijri { get; set; } = string.Empty;
         public DateOnly? lastOfferPresentationDate { get; set; }

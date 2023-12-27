@@ -9,7 +9,7 @@ public class DataService : IDataService
     {
         List<CardBasicData> CardsBasicData = new List<CardBasicData>();
         string baseUrl = "https://tenders.etimad.sa/Tender/AllSupplierTendersForVisitorAsync?";
-        int pageNumber = 1;
+        int pageNumber = 500;
         int pageSize = 10;
         using (HttpClient httpClient = new HttpClient())
         {
@@ -28,7 +28,8 @@ public class DataService : IDataService
                         CardsBasicData.AddRange(cardsPage!.Data!);
                         Console.WriteLine($"Page {pageNumber}:");
                         pageNumber++;
-                        break;
+                        if (CardsBasicData.Count > 5)
+                            break;
                     }
                     else
                     {
