@@ -1,16 +1,15 @@
-﻿using HtmlAgilityPack;
-using OpenQA.Selenium.Chrome;
+﻿using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium;
 using Carter;
 using OpenQA.Selenium.Support.UI;
 using WebScraperApi.Services;
 using WebScraperApi.Models;
+using System.Globalization;
 
 namespace WebScraperApi;
 
 public class WebScraper : ICarterModule
 {
-    private IDictionary<string, object> DetailsDict = new Dictionary<string, object>();
     private List<DetailsForVisitor> DetailsForVisitorsList = new List<DetailsForVisitor>();
     private List<GetTenderDates> GetTenderDatesList = new List<GetTenderDates>();
     private List<GetAwardingResult> GetAwardingResultsList = new List<GetAwardingResult>();
@@ -35,153 +34,140 @@ public class WebScraper : ICarterModule
         {
             var CardsBasicData = await GetDataService.GetTaskAsync();
             var CardsBasicDataIds = CardsBasicData.Select(t => t.tenderIdString).ToList();
+            GetCardsDetails(CardsBasicDataIds);
 
         }).WithOpenApi();
     }
 
     private void GetCardsDetails(List<string> tenderIDs)
     {
+        GetAwardingResult("");
 
         foreach (var tenderID in tenderIDs)
         {
-            DetailsForVisitor(tenderID);
-            GetTenderDates(tenderID);
-            GetAwardingResult(tenderID);
-            GetRelationsDetails(tenderID);
+            //DetailsForVisitor(tenderID);
+            //GetTenderDates(tenderID);
+           // GetAwardingResult(tenderID);
+            //GetRelationsDetails(tenderID);
         }
         //add DetailsForVisitorsList to DB table and save Changes 
     }
     private void DetailsForVisitor(string tenderID)
     {
-        // get data from url using selnum (baseURL+tenderID)
-        // save data to DetailsForVisitorsList 
+        var url = UrlDetailsForVisitor + tenderID;
+
 
     }
     private void GetTenderDates(string tenderID)
     {
+        var url = UrlGetTenderDates + tenderID;
+        var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
+        chromeOptions.AddArguments("--headless=new"); // comment out for testing
 
-    } 
+        using (var driver = new ChromeDriver(chromeOptions))
+        {
+            driver.Navigate().GoToUrl(url);
+            GetTenderDates tenderDates = null;
+
+            var items = driver.FindElements(By.XPath("//li[@class='list-group-item']"));
+
+            foreach (var item in items)
+            {
+                tenderDates = new();
+                var dates = item.FindElements(By.XPath("//div[@class='row']")).Skip(1).Take(10);
+                foreach (var date in dates)
+                {
+                    var title = date.FindElement(By.ClassName("etd-item-title"));
+                    var info = date.FindElement(By.ClassName("etd-item-info"));
+                    var txt = title.Text;
+                    var span = info.FindElements(By.TagName("span")).Select(o => o.Text).ToArray();
+                    switch (txt)
+                    {
+                        case "اخر موعد لإستلام الاستفسارات":
+                            tenderDates.lastEnqueriesDate = DateOnly.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                            tenderDates.lastEnqueriesDateHijri = span[1];
+                            break;
+                        case "آخر موعد لتقديم العروض":
+                            tenderDates.lastOfferPresentationDate = DateOnly.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                            tenderDates.lastOfferPresentationDateHijri = span[1];
+                            tenderDates.lastOfferPresentationTime = TimeOnly.ParseExact(span[2], "h:mm tt", CultureInfo.InvariantCulture);
+                            break;
+                        case "تاريخ فتح العروض":
+                            tenderDates.offersOpeningDate = span[0] == "لا يوجد" ? null : DateTime.Parse(span[0]);
+                            break;
+                        case "تاريخ فحص العروض":
+                            tenderDates.offersExaminationDate = DateOnly.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                            tenderDates.offersExaminationDateHijri = span[1];
+                            tenderDates.offersExaminationTime = TimeOnly.ParseExact(span[2], "h:mm tt", CultureInfo.InvariantCulture);
+                            break;
+                        case "التاريخ المتوقع للترسية":
+                            tenderDates.expectedAwardDate = DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                            tenderDates.expectedAwardDateHijri = span[1];
+                            break;
+                        case "تاريخ بدء الأعمال / الخدمات":
+                            tenderDates.businessStartDate = DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                            tenderDates.businessStartDateHijri = span[1];
+                            break;
+                        case "تاريخ استحقاق خطاب تأكيد المشاركة":
+                            tenderDates.participationConfirmationLetterDate = span[0] == "لا يوجد" ? null : DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture); ;
+                            break;
+                        case "بداية إرسال الأسئلة و الاستفسارات":
+                            tenderDates.sendingInquiriesDate = DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                            tenderDates.sendingInquiriesDateHijri = span[1];
+                            break;
+                        case "أقصى مدة للإجابة على الإستفسارات(أيام)":
+                            tenderDates.AnswerInquiriesInDays = int.Parse(span[0]);
+                            break;
+                        default:
+                            tenderDates.offersOpeningLocation = span[0];
+                            break;
+                    }
+                }
+                GetTenderDatesList.Add(tenderDates);
+            }
+            driver.Quit();
+        }
+    }
     private void GetAwardingResult(string tenderID)
     {
+        var url = UrlGetAwardingResult + "l1FcIiwZqe2uSgRYjuiCRA==";// tenderID;
+        var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
+        chromeOptions.AddArguments("--headless=new"); // comment out for testing
+        using (var driver = new ChromeDriver(chromeOptions))
+        {
+            driver.Navigate().GoToUrl(url);
+            GetAwardingResult awardingResult = null;
+            IWebElement table = driver.FindElement(By.XPath("//table[@summary='desc']"));
+            IList<IWebElement> rows = table.FindElements(By.TagName("tr"));
+            foreach (IWebElement row in rows)
+            {
+                IList<IWebElement> cells = row.FindElements(By.TagName("td"));
+                foreach (IWebElement cell in cells)
+                {
+                    var test = cell.Text;
+                    Console.WriteLine(cell.Text);
+                }
+            }
+            IWebElement  table2 = driver.FindElements(By.XPath("//table[@summary='desc']")).Skip(0).SingleOrDefault();
+            IList<IWebElement> table2_rows = table.FindElements(By.TagName("tr"));
+            foreach (IWebElement row in rows)
+            {
+                IList<IWebElement> cells = row.FindElements(By.TagName("td"));
+                foreach (IWebElement cell in cells)
+                {
+                    var test = cell.Text;
+                    Console.WriteLine(cell.Text);
+                }
+            }
+
+        }
+
 
     }
     private void GetRelationsDetails(string tenderID)
     {
 
     }
-
-
-
-
-
-
-    private string GetPageData(string url)
-    {
-        HtmlWeb htmlWeb = new HtmlWeb()
-        {
-            PreRequest = (d) =>
-            {
-                d.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
-                {
-                    return true;
-                };
-                return true;
-            }
-        };
-        var document = htmlWeb.Load(url);
-        var divElements = document.DocumentNode.SelectNodes("//div[@class='etd-cards']//div[@class='row justify-content-center']//div[@id='cardsresult']//div[@class='row justify-content-center']//div[@class='col-12 col-md-3 p-0']").ToArray();
-
-        if (divElements != null)
-        {
-            foreach (var divElement in divElements)
-            {
-                Console.WriteLine(divElement.InnerHtml);
-            }
-        }
-        return "";
-    }
-    #region old selnum
-    //private string GetDataWithSelenium(string url)
-    //{
-    //    var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
-    //    chromeOptions.AddArguments("--headless=new"); // comment out for testing
-    //    var driver = new ChromeDriver(chromeOptions);
-
-    //    // scraping logic...
-    //    driver.Navigate().GoToUrl(url);
-    //    //var html = driver.PageSource;
-    //    //Console.WriteLine(html);
-    //    var Cards = driver.FindElements(By.XPath("//div[@id='cardsresult']//div[@class='row justify-content-center']//div[@class='col-12 col-md-12 mb-4']"));
-    //    foreach (var card in Cards)
-    //    {
-    //        var details_btns = card.FindElements(By.XPath("//div[@class='tender-card rounded card mt-0 mb-0']//div[@class='row']//div[@class='col-12 col-md-9 p-0']//div[@class='tender-metadata border-left border-bottom']//div[@class='row']//div[@class='col-12 border-bottom']//div[@class='row']//div[@class='col-12']//div[@class='pb-2']//div[@class='pull-right']"));
-    //        var details_btn = card.FindElement(By.ClassName("pull-right"));
-    //        var cardOuterHtml = card.GetAttribute("outerHTML");
-
-    //        details_btn.Click();
-
-    //        GetDetails(driver);
-    //        //  var cardOuterHtml = card.GetAttribute("outerHTML");
-    //        driver.Navigate().Back();
-    //        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-    //        wait.Until(driver => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
-    //        Cards = driver.FindElements(By.XPath("//div[@id='cardsresult']//div[@class='row justify-content-center']//div[@class='col-12 col-md-12 mb-4']"));
-
-    //        // Find the card element again using its outer HTML
-    //        var refreshedCard = Cards.FirstOrDefault(c => c.GetAttribute("outerHTML") == cardOuterHtml);
-
-    //        if (refreshedCard != null)
-    //        {
-    //            // Perform actions on the refreshed card, e.g., click details button again
-    //            var refreshedDetailsBtn = refreshedCard.FindElement(By.ClassName("pull-right"));
-    //            refreshedDetailsBtn.Click();
-    //            GetDetails(driver);
-    //            driver.Navigate().Back();
-    //            //   WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-    //            wait.Until(driver => ((IJavaScriptExecutor)driver).ExecuteScript("return document.readyState").Equals("complete"));
-    //        }
-    //        else
-    //        {
-    //            // Handle the case where the card is not found on the refreshed page
-    //            Console.WriteLine("Card not found on the refreshed page.");
-    //        }
-
-    //    }
-    //    //  GetPagination(driver);
-    //    // close the browser and release its resources
-    //    driver.Quit();
-    //    return "";
-    //}
-    //private void GetDetails(ChromeDriver driver)
-    //{
-    //    List<string> card = new List<string>();
-    //    var details = driver.FindElements(By.ClassName("form-details-list"));
-    //    foreach (var detail in details)
-    //    {
-    //        var items = detail.FindElements(By.ClassName("list-group-item"));
-    //        foreach (var item in items)
-    //        {
-    //            var title = item.FindElement(By.ClassName("etd-item-title")).Text;
-    //            var infoSpans = item.FindElements(By.ClassName("etd-item-info"));
-    //            string info = string.Empty;
-    //            if (infoSpans.Any())
-    //            {
-    //                foreach (var infoSpan in infoSpans)
-    //                {
-    //                    info += infoSpan.Text;
-    //                }
-    //                //todo add details to database and change the return of the function to void
-    //            }
-    //            card.Add(info);
-    //            // DetailsDict.Add(title, info);
-    //        }
-    //        DetailsList.Add(card);
-    //    }
-
-    //}
-
-    #endregion
-
 
     #region new
     private string GetDataWithSelenium(string url)

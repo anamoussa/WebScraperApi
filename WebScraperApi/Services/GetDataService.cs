@@ -22,11 +22,12 @@ namespace WebScraperApi.Services
                         {
                             string responseBody = await response.Content.ReadAsStringAsync();
                             CardsBasicDataResponse? cardsPage = Newtonsoft.Json.JsonConvert.DeserializeObject<CardsBasicDataResponse>(responseBody);
-                            if(cardsPage!.Data!.Count==0)
+                            if (cardsPage!.Data!.Count == 0)
                                 break;
                             CardsBasicData.AddRange(cardsPage!.Data!);
                             Console.WriteLine($"Page {pageNumber}:");
                             pageNumber++;
+                            break;
                         }
                         else
                         {
