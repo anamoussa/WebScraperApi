@@ -5,6 +5,7 @@ using OpenQA.Selenium.Support.UI;
 using WebScraperApi.Services;
 using WebScraperApi.Models;
 using System.Globalization;
+using System.Runtime.InteropServices;
 
 namespace WebScraperApi;
 
@@ -41,23 +42,19 @@ public class WebScraper : ICarterModule
 
     private void GetCardsDetails(List<string> tenderIDs)
     {
-        GetAwardingResult("");
-
+        GetRelationsDetails("");
         foreach (var tenderID in tenderIDs)
         {
+            //var resuylt = GetAwardingResult(tenderID);
+
             //DetailsForVisitor(tenderID);
             //GetTenderDates(tenderID);
-           // GetAwardingResult(tenderID);
+            // GetAwardingResult(tenderID);
             //GetRelationsDetails(tenderID);
         }
         //add DetailsForVisitorsList to DB table and save Changes 
     }
-    private void DetailsForVisitor(string tenderID)
-    {
-        var url = UrlDetailsForVisitor + tenderID;
 
-
-    }
     private void GetTenderDates(string tenderID)
     {
         var url = UrlGetTenderDates + tenderID;
@@ -128,47 +125,114 @@ public class WebScraper : ICarterModule
             driver.Quit();
         }
     }
-    private void GetAwardingResult(string tenderID)
+    private GetAwardingResult GetAwardingResult(string tenderID)
     {
-        var url = UrlGetAwardingResult + "l1FcIiwZqe2uSgRYjuiCRA==";// tenderID;
+        GetAwardingResult awardingResult = new GetAwardingResult();
+        //  var url = UrlGetAwardingResult + "l1FcIiwZqe2uSgRYjuiCRA==";// tenderID;
+        //  var url = UrlGetAwardingResult + "QLrdkFBEQtZctHDeIppNmw==";// tenderID;
+        var url = UrlGetAwardingResult + tenderID;
         var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
         chromeOptions.AddArguments("--headless=new"); // comment out for testing
         using (var driver = new ChromeDriver(chromeOptions))
         {
+
+            OfferApplicant offerApplicant = null;
+            List<OfferApplicant> offerApplicants = new List<OfferApplicant>();
+
+            AwardedSupplier awardedSupplier = null;
+            List<AwardedSupplier> awardedSuppliers = new List<AwardedSupplier>();
             driver.Navigate().GoToUrl(url);
-            GetAwardingResult awardingResult = null;
-            IWebElement table = driver.FindElement(By.XPath("//table[@summary='desc']"));
-            IList<IWebElement> rows = table.FindElements(By.TagName("tr"));
-            foreach (IWebElement row in rows)
+            try
             {
-                IList<IWebElement> cells = row.FindElements(By.TagName("td"));
-                foreach (IWebElement cell in cells)
-                {
-                    var test = cell.Text;
-                    Console.WriteLine(cell.Text);
-                }
+                IWebElement element2 = driver.FindElement(By.ClassName("card-body"));
+                var test1 = element2.Text;
+                return null;
             }
-            IWebElement  table2 = driver.FindElements(By.XPath("//table[@summary='desc']")).Skip(0).SingleOrDefault();
-            IList<IWebElement> table2_rows = table.FindElements(By.TagName("tr"));
+            catch (Exception) { }
+
+            IWebElement OfferApplicantTable = driver.FindElement(By.XPath("//table[@summary='desc']"));
+            IList<IWebElement> rows = OfferApplicantTable.FindElements(By.TagName("tr"));
             foreach (IWebElement row in rows)
             {
                 IList<IWebElement> cells = row.FindElements(By.TagName("td"));
-                foreach (IWebElement cell in cells)
+                if (cells.Count > 0)
                 {
-                    var test = cell.Text;
-                    Console.WriteLine(cell.Text);
+                    offerApplicant = new OfferApplicant();
+                    offerApplicant.supplier_name = cells[0].Text;
+                    offerApplicant.financial_offer = double.Parse(cells[1].Text);
+                    offerApplicant.isAccepted = cells[2].Text == "مطابق" ? true : false;
+                    offerApplicants.Add(offerApplicant!);
+
                 }
             }
 
+            var awardedSupplierTable = driver.FindElements(By.XPath("//table[@summary='desc']")).Skip(1).Single();
+            IList<IWebElement> awardedSupplierTableRows = awardedSupplierTable.FindElements(By.TagName("tr"));
+            foreach (IWebElement row in awardedSupplierTableRows)
+            {
+                IList<IWebElement> cells = row.FindElements(By.TagName("td"));
+                if (cells.Count > 0)
+                {
+                    awardedSupplier = new AwardedSupplier();
+                    awardedSupplier.supplier_name = cells[0].Text;
+                    awardedSupplier.financial_offer = double.Parse(cells[1].Text);
+                    awardedSupplier.award_value = double.Parse(cells[2].Text);
+                    awardedSuppliers.Add(awardedSupplier!);
+                }
+
+            }
+            awardingResult.awardedSuppliers = awardedSuppliers;
+            awardingResult.offerApplicants = offerApplicants;
         }
-
+        return awardingResult;
 
     }
     private void GetRelationsDetails(string tenderID)
     {
+        var url = UrlGetRelationsDetail + "81fd6cZ5YX5xoZT8PuFuFg==";
+        IWebDriver driver = new ChromeDriver();
+
+        // Navigate to the page with your HTML content
+        driver.Navigate().GoToUrl(url);
+
+        try
+        {
+
+            IList<IWebElement> listItems = driver.FindElements(By.CssSelector("ul.list-group.form-details-list li.list-group-item"));
+
+            foreach (IWebElement listItem in listItems)
+            {
+                // Access the elements within each list item
+                IWebElement titleElement = listItem.FindElement(By.CssSelector(".etd-item-title"));
+                IWebElement infoElement = listItem.FindElement(By.CssSelector(".etd-item-info"));
+
+                // Output the text of the elements
+                var test = titleElement.Text;
+                var test2 = infoElement.Text;
+                Console.WriteLine("Title: " + titleElement.Text);
+                Console.WriteLine("Info: " + infoElement.Text);
+            }
+            if(listItems.Count> 0)
+            {
+                
+            }
+        }
+        catch (NoSuchElementException e)
+        {
+            Console.WriteLine("Element not found: " + e.Message);
+        }
+        finally
+        {
+            // Close the browser
+            driver.Quit();
+        }
+    }
+    private void DetailsForVisitor(string tenderID)
+    {
+        var url = UrlDetailsForVisitor + tenderID;
+
 
     }
-
     #region new
     private string GetDataWithSelenium(string url)
     {
