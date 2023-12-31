@@ -56,18 +56,15 @@ namespace WebScraperApi.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("agencyCode")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("agencyName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("branchId")
                         .HasColumnType("int");
 
                     b.Property<string>("branchName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<float>("buyingCost")
@@ -86,7 +83,6 @@ namespace WebScraperApi.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("currentTime")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<float>("financialFees")
@@ -96,7 +92,6 @@ namespace WebScraperApi.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("insideKSA")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<float>("invitationCost")
@@ -106,29 +101,24 @@ namespace WebScraperApi.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("lastEnqueriesDateHijri")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("lastOfferPresentationDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("lastOfferPresentationDateHijri")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("multipleSearch")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("offersOpeningDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("offersOpeningDateHijri")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("referenceNumber")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("remainingDays")
@@ -144,47 +134,39 @@ namespace WebScraperApi.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("technicalOrganizationId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("tenderActivityId")
                         .HasColumnType("int");
 
                     b.Property<string>("tenderActivityName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("tenderActivityNameList")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("tenderId")
                         .HasColumnType("int");
 
                     b.Property<string>("tenderName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("tenderNumber")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("tenderStatusId")
                         .HasColumnType("int");
 
                     b.Property<string>("tenderStatusIdString")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("tenderStatusName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("tenderTypeId")
                         .HasColumnType("int");
 
                     b.Property<string>("tenderTypeName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("tenderIdString");
@@ -192,7 +174,7 @@ namespace WebScraperApi.Migrations
                     b.ToTable("CardBasicDatas");
                 });
 
-            modelBuilder.Entity("WebScraperApi.Models.DetailsForVisitor", b =>
+            modelBuilder.Entity("WebScraperApi.Models.GetDetailsForVisitor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -394,7 +376,7 @@ namespace WebScraperApi.Migrations
                     b.Navigation("GetAwardingResult");
                 });
 
-            modelBuilder.Entity("WebScraperApi.Models.DetailsForVisitor", b =>
+            modelBuilder.Entity("WebScraperApi.Models.GetDetailsForVisitor", b =>
                 {
                     b.HasOne("WebScraperApi.Models.CardBasicData", "CardBasicData")
                         .WithMany()

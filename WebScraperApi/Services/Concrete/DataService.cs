@@ -9,7 +9,7 @@ public class DataService : IDataService
     {
         List<CardBasicData> CardsBasicData = new List<CardBasicData>();
         string baseUrl = "https://tenders.etimad.sa/Tender/AllSupplierTendersForVisitorAsync?";
-        int pageNumber = 500;
+        int pageNumber = 1;
         int pageSize = 10;
         using (HttpClient httpClient = new HttpClient())
         {

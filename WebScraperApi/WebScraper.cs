@@ -10,8 +10,8 @@ public class WebScraper : ICarterModule
         app.MapGet("/api/Get", async (IDataService dataService, IScraperService scraperService) =>
         {
             var CardsBasicData = await dataService.GetTaskAsync();
-            var CardsBasicDataIds = CardsBasicData.Select(t => t.tenderIdString).ToList();
-            scraperService.GetCardsDetails(CardsBasicDataIds);
+
+            scraperService.GetAllRelatedData(CardsBasicData);
 
         }).WithDisplayName("GetAllData")
             .WithOpenApi();

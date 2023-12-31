@@ -6,7 +6,7 @@ public class ScrapDBContext : DbContext
 {
     public DbSet<AwardedSupplier>AwardedSuppliers  { get; set; }
     public DbSet<CardBasicData>CardBasicDatas { get; set; }
-    public DbSet<DetailsForVisitor>DetailsForVisitors  { get; set; }
+    public DbSet<GetDetailsForVisitor>DetailsForVisitors  { get; set; }
     public DbSet<GetAwardingResult> GetAwardingResults { get; set; }
     public DbSet<GetRelationsDetail> GetRelationsDetails { get; set; }
     public DbSet<GetTenderDate>GetTenderDates { get; set; }

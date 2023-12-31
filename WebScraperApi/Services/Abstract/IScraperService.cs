@@ -1,6 +1,8 @@
-﻿namespace WebScraperApi.Services.Abstract;
+﻿using WebScraperApi.Models;
+
+namespace WebScraperApi.Services.Abstract;
 
 public interface IScraperService
 {
-    void GetCardsDetails(List<string> tenderIDs);
+    void GetAllRelatedData(List<CardBasicData> CardsData);
 }
