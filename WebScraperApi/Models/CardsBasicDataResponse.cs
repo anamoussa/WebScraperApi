@@ -1,7 +1,6 @@
-﻿namespace WebScraperApi.Models
+﻿namespace WebScraperApi.Models;
+
+public class CardsBasicDataResponse
 {
-    public class CardsBasicDataResponse
-    {
-        public List<CardBasicData>? Data { get; set; }
-    }
+    public List<CardBasicData>? Data { get; set; }
 }

@@ -1,5 +1,4 @@
 ﻿namespace WebScraperApi.Helpers;
-
 public static class Constants
 {
     public static string UrlDetailsForVisitor = $"https://tenders.etimad.sa/Tender/DetailsForVisitor?STenderId=";

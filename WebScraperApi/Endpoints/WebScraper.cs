@@ -1,7 +1,4 @@
-﻿using Carter;
-using WebScraperApi.Services.Abstract;
-
-namespace WebScraperApi;
+﻿namespace WebScraperApi.Endpoints;
 
 public class WebScraper : ICarterModule
 {
@@ -13,12 +10,6 @@ public class WebScraper : ICarterModule
 
             scraperService.GetAllRelatedData(CardsBasicData);
 
-        }).WithDisplayName("GetAllData")
-            .WithOpenApi();
+        }).WithOpenApi();
     }
-
-
-
-
-
 }

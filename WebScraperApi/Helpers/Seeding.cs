@@ -1,13 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
-using WebScraperApi.Models.Data;
-
-namespace WebScraperApi.Helpers;
+﻿namespace WebScraperApi.Helpers;
 
 public static class Seeding
 {
-    public static void SeedingDB(this WebApplication app)
+    public static void SeedingDB(this IApplicationBuilder app)
     {
-        using var scope = app.Services.CreateScope();
+        using var scope = app.ApplicationServices.CreateScope();
         var service = scope.ServiceProvider;
         try
         {

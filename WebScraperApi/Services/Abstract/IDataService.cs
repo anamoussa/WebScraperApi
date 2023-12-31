@@ -1,6 +1,4 @@
-﻿using WebScraperApi.Models;
-
-namespace WebScraperApi.Services.Abstract;
+﻿namespace WebScraperApi.Services.Abstract;
 
 public interface IDataService
 {

@@ -16,7 +16,7 @@ public class GlobalExceptionHandler : IExceptionHandler
     {
         _logger.LogError(exception, "Exception Occurred {Message}", exception.Message);
         httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-        await httpContext.Response.WriteAsJsonAsync($"something went error => {exception.Message}", cancellationToken);
+        await httpContext.Response.WriteAsJsonAsync($"something went error => {exception.Message} => {exception.InnerException?.Message}", cancellationToken);
         return true;
     }
 }
