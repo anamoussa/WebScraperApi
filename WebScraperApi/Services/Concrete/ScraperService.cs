@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Drawing;
 
 namespace WebScraperApi.Services.Concrete;
@@ -22,19 +23,24 @@ public class ScraperService : IScraperService
         foreach (var tenderID in tenderIDs)
         {
 
-            //GetDetailsForVisitor(tenderID);
-            //GetTenderDates(tenderID);
-            //GetAwardingResult(tenderID);
+            GetDetailsForVisitor(tenderID);
+            GetTenderDates(tenderID);
+            GetAwardingResult(tenderID);
             GetRelationsDetails(tenderID);
-            //if (!GetAwardingResultsList.Any())
-            //{
-            //    return;
-            //}
-            //_context.CardBasicDatas.AddRange(CardsBasicData);
-            //_context.GetTenderDates.AddRange(GetTenderDatesList);
-            //_context.GetRelationsDetails.AddRange(GetRelationsDetailsList);
-            //_context.GetAwardingResults.AddRange(GetAwardingResultsList);
-            //_context.SaveChanges();
+
+            if (GetAwardingResultsList.Count>4 || tenderIDs.IndexOf(tenderID) == 390)
+            {
+                _context.CardBasicDatas.AddRange(CardsBasicData);
+                _context.GetTenderDates.AddRange(GetTenderDatesList);
+                _context.GetRelationsDetails.AddRange(GetRelationsDetailsList);
+                _context.GetAwardingResults.AddRange(GetAwardingResultsList);
+                _context.GetDetailsForVisitor.AddRange(DetailsForVisitorsList);
+
+                _context.SaveChanges();
+                return;
+            }
+            Console.WriteLine(tenderIDs.IndexOf(tenderID));
+
         }
     }
 
@@ -187,7 +193,12 @@ public class ScraperService : IScraperService
     private void GetRelationsDetails(string tenderID)
     {
         GetRelationsDetail getRelationsDetail = new GetRelationsDetail();
+        ExecutionLocation executionLocation = new ExecutionLocation();
+        List<ExecutionLocation> executionLocations = new List<ExecutionLocation>();
         getRelationsDetail.tenderIdString = tenderID;
+       // var url = Constants.UrlGetRelationsDetail + "bD%206v98V*@@**lZ9hHHRfEYDXg==";//tenderID;
+         // var url = Constants.UrlGetRelationsDetail + "*@@**0*@@**mn0y%20iTWVZYHq1Dm7KQ==";//tenderID;
+       // var url = Constants.UrlGetRelationsDetail + "1SvP6s1e2e%20NA7QGJFs6bw==";//tenderID;
         var url = Constants.UrlGetRelationsDetail + tenderID;
         var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
         chromeOptions.AddArguments("--headless=new"); // comment out for testing
@@ -199,17 +210,45 @@ public class ScraperService : IScraperService
         {
             var titleElement = listItem.FindElement(By.CssSelector(".etd-item-title")).Text;
             var infoElement = listItem.FindElement(By.CssSelector(".etd-item-info"));
-            GetInDepthInfo(infoElement, getRelationsDetail);
+            //   GetInDepthInfo(infoElement, getRelationsDetail);
             switch (titleElement)
             {
                 case "مكان التنفيذ":
-                    getRelationsDetail.ExecutionLocation = infoElement.Text;
+                    var spa = infoElement.FindElement(By.TagName("span")).Text;
+                    var CitiesList = infoElement.FindElements(By.XPath("(//ol)[1]/li"));
+                    foreach (var item in CitiesList)
+                    {
+                        executionLocation = new ExecutionLocation();
+                        executionLocation.InSideKingdom = spa == "داخل المملكة" ? true : false;
+                        if (item.Text.Contains("\n"))
+                        {
+                            executionLocation.City = item.Text.Split("\n")[0].Trim();
+                        }
+                        else
+                        {
+                            executionLocation.City = item.Text.Trim();
+                        }
+                        var Regions = item.FindElements(By.TagName("li"));
+                        foreach (var Regionitem in Regions)
+                        {
+                            Region region = new Region();
+                            region.Name = Regionitem.Text;
+                            executionLocation.Regions?.Add(region);
+                        }
+                        executionLocations.Add(executionLocation);
+                    }
                     break;
                 case "التفاصيل":
                     getRelationsDetail.Details = infoElement.Text;
                     break;
                 case "نشاط المنافسة":
-                    getRelationsDetail.CompetitionActivity = infoElement.Text;
+                    var CompetitionActivitiesList = infoElement.FindElements(By.XPath("(//ol)[2]/li"));
+                    foreach (var item in CompetitionActivitiesList)
+                    {
+                        CompetitionActivity competitionActivity = new CompetitionActivity();    
+                        competitionActivity.Name=item.Text; 
+                        getRelationsDetail.CompetitionActivities?.Add(competitionActivity);
+                    }
                     break;
                 case "تشمل المنافسة على بنود توريد":
                     getRelationsDetail.SupplyItemsCompetition = infoElement.Text;
@@ -224,6 +263,7 @@ public class ScraperService : IScraperService
         }
         // Close the browser
         driver.Quit();
+        getRelationsDetail.ExecutionLocations = executionLocations;
         GetRelationsDetailsList.Add(getRelationsDetail);
     }
     private void GetInDepthInfo(IWebElement webElement, GetRelationsDetail getRelationsDetail)
@@ -365,6 +405,48 @@ public class ScraperService : IScraperService
         }
         driver.Quit();
         DetailsForVisitorsList.Add(detailsForVisitor);
+    }
+    private void GetRelationsDetailsold(string tenderID)
+    {
+        GetRelationsDetail getRelationsDetail = new GetRelationsDetail();
+        getRelationsDetail.tenderIdString = tenderID;
+        var url = Constants.UrlGetRelationsDetail + "1SvP6s1e2e%20NA7QGJFs6bw==";//tenderID;
+        var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
+        chromeOptions.AddArguments("--headless=new"); // comment out for testing
+        using var driver = new ChromeDriver(chromeOptions);
+        driver.Navigate().GoToUrl(url);
+
+        IList<IWebElement> listItems = driver.FindElements(By.CssSelector("ul.list-group.form-details-list li.list-group-item"));
+        foreach (IWebElement listItem in listItems)
+        {
+            var titleElement = listItem.FindElement(By.CssSelector(".etd-item-title")).Text;
+            var infoElement = listItem.FindElement(By.CssSelector(".etd-item-info"));
+            GetInDepthInfo(infoElement, getRelationsDetail);
+            switch (titleElement)
+            {
+                case "مكان التنفيذ":
+                    //  getRelationsDetail.ExecutionLocation = infoElement.Text;
+                    break;
+                case "التفاصيل":
+                    getRelationsDetail.Details = infoElement.Text;
+                    break;
+                case "نشاط المنافسة":
+                  //  getRelationsDetail.CompetitionActivity = infoElement.Text;
+                    break;
+                case "تشمل المنافسة على بنود توريد":
+                    getRelationsDetail.SupplyItemsCompetition = infoElement.Text;
+                    break;
+                case "أعمال الإنشاء":
+                    getRelationsDetail.ConstructionWorks = infoElement.Text;
+                    break;
+                case "أعمال الصيانة والتشغيل":
+                    getRelationsDetail.MaintenanceAndOperationWorks = infoElement.Text;
+                    break;
+            }
+        }
+        // Close the browser
+        driver.Quit();
+        GetRelationsDetailsList.Add(getRelationsDetail);
     }
 
 }

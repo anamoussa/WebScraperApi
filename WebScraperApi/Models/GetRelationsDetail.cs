@@ -8,9 +8,9 @@ public class GetRelationsDetail
     public string tenderIdString { get; set; }
     public virtual CardBasicData? CardBasicData { get; set; }
 
-    public string? ExecutionLocation { get; set; }
+    public List<ExecutionLocation>? ExecutionLocations { get; set; }
     public string? Details { get; set; }
-    public string? CompetitionActivity { get; set; }
+    public List<CompetitionActivity>? CompetitionActivities { get; set; } = new();
     public string? SupplyItemsCompetition { get; set; }
     public string? ConstructionWorks { get; set; }
     public string? MaintenanceAndOperationWorks { get; set; }

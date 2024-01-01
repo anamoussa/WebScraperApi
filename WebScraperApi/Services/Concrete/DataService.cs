@@ -6,8 +6,8 @@ public class DataService : IDataService
     {
         List<CardBasicData> CardsBasicData = new();
         string baseUrl = "https://tenders.etimad.sa/Tender/AllSupplierTendersForVisitorAsync?";
-        int pageNumber = 1;
-        int pageSize = 10;
+        int pageNumber = 500;
+        int pageSize = 400;
 
         var handler = new HttpClientHandler
         {

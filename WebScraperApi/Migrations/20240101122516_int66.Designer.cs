@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebScraperApi.Models.Data;
 
@@ -11,9 +12,11 @@ using WebScraperApi.Models.Data;
 namespace WebScraperApi.Migrations
 {
     [DbContext(typeof(ScrapDBContext))]
-    partial class ScrapDBContextModelSnapshot : ModelSnapshot
+    [Migration("20240101122516_int66")]
+    partial class int66
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -280,7 +283,7 @@ namespace WebScraperApi.Migrations
 
                     b.HasIndex("tenderIdString");
 
-                    b.ToTable("GetDetailsForVisitor");
+                    b.ToTable("DetailsForVisitors");
                 });
 
             modelBuilder.Entity("WebScraperApi.Models.GetRelationsDetail", b =>
