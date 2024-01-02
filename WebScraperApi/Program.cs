@@ -8,6 +8,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ScrapDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DBConnection"))
 );
+
 builder.Services.AddScoped<IDataService, DataService>();
 builder.Services.AddScoped<IScraperService, ScraperService>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

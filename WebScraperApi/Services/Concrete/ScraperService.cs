@@ -8,16 +8,32 @@ public class ScraperService : IScraperService
     private List<GetRelationsDetail> GetRelationsDetailsList = new();
 
     private readonly ScrapDBContext _context;
-    public ScraperService(ScrapDBContext context)
+    private readonly IDataService _service;
+    public ScraperService(ScrapDBContext context, IDataService service)
     {
 
         _context = context;
+        _service = service;
     }
-    public void GetAllRelatedData(List<CardBasicData> CardsBasicData)
+    public async Task GetDataAsync()
+    {
+        for (int i = 1; i < 2562; i++)
+        {
+            await Console.Out.WriteLineAsync("*********page Number  " + i + "  **********************");
+            var CardsBasicDataFromDB = await _service.GetCardsIDsPagesFromDBAsync(100, i);
+            GetAllRelatedData(CardsBasicDataFromDB.ToList());
+
+        }
+
+        //loop over pagination 
+        //select ids
+        //pass list of ids to getall relateddata
+        return;
+    }
+    private void GetAllRelatedData(List<string> CardsIDs)
     {
         int counter = 0;
-        var tenderIDs = CardsBasicData.Select(t => t.tenderIdString).ToList();
-        foreach (var tenderID in tenderIDs)
+        foreach (var tenderID in CardsIDs)
         {
 
             GetDetailsForVisitor(tenderID);
@@ -25,26 +41,28 @@ public class ScraperService : IScraperService
             GetAwardingResult(tenderID);
             GetRelationsDetails(tenderID);
 
-            if (counter==10)
+            if (counter == 10)
             {
-                var recordsToDelete = _context.CardBasicDatas
-                .Where(c => tenderIDs.Contains(c.tenderIdString))
-                .ToList();
-                _context.CardBasicDatas.RemoveRange(recordsToDelete);
-                _context.SaveChanges();
+                //var recordsToDelete = _context.CardBasicDatas
+                //.Where(c => tenderIDs.Contains(c.tenderIdString))
+                //.ToList();
+                //_context.CardBasicDatas.RemoveRange(recordsToDelete);
+                //_context.SaveChanges();
+                // _context.CardBasicDatas.AddRange(CardsBasicData);
 
-                _context.CardBasicDatas.AddRange(CardsBasicData);
                 _context.GetTenderDates.AddRange(GetTenderDatesList);
                 _context.GetRelationsDetails.AddRange(GetRelationsDetailsList);
                 _context.GetAwardingResults.AddRange(GetAwardingResultsList);
                 _context.GetDetailsForVisitor.AddRange(DetailsForVisitorsList);
                 _context.SaveChanges();
+                DetailsForVisitorsList = new();
+                GetTenderDatesList = new();
+                GetAwardingResultsList = new();
+                GetRelationsDetailsList = new();
                 counter = 0;
-                return;
             }
             counter++;
-            Console.WriteLine("_______________________******_____"+tenderIDs.IndexOf(tenderID));
-
+            Console.WriteLine("_______________________******_____" + CardsIDs.IndexOf(tenderID));
         }
     }
     private void GetTenderDates(string tenderID)
@@ -52,85 +70,87 @@ public class ScraperService : IScraperService
         var url = Constants.UrlGetTenderDates + tenderID;
         var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
         chromeOptions.AddArguments("--headless=new"); // comment out for testing
-        using (var driver = new ChromeDriver(chromeOptions))
+        using var driver = new ChromeDriver(chromeOptions);
+        driver.Manage().Timeouts().PageLoad.Add(TimeSpan.FromMinutes(5));
+        driver.Manage().Timeouts().ImplicitWait.Add(TimeSpan.FromMinutes(5));
+        driver.Manage().Timeouts().AsynchronousJavaScript.Add(TimeSpan.FromMinutes(5));
+        driver.Navigate().GoToUrl(url);
+        GetTenderDate tenderDates = new GetTenderDate();
+        tenderDates.tenderIdString = tenderID;
+        var dates = driver.FindElements(By.CssSelector("li.list-group-item"));
+        foreach (var date in dates)
         {
-            driver.Navigate().GoToUrl(url);
-            GetTenderDate tenderDates = new GetTenderDate();
-            tenderDates.tenderIdString = tenderID;
-            var dates = driver.FindElements(By.CssSelector("li.list-group-item"));
-            foreach (var date in dates)
+            var title = date.FindElement(By.ClassName("etd-item-title"));
+            var info = date.FindElement(By.ClassName("etd-item-info"));
+            var txt = title.Text;
+            var span = info.FindElements(By.TagName("span")).Select(o => o.Text).ToArray();
+            try
             {
-                var title = date.FindElement(By.ClassName("etd-item-title"));
-                var info = date.FindElement(By.ClassName("etd-item-info"));
-                var txt = title.Text;
-                var span = info.FindElements(By.TagName("span")).Select(o => o.Text).ToArray();
-                try
+                switch (txt)
                 {
-                    switch (txt)
-                    {
-                        #region un used Data
-                        //// dublicated
-                        //case "اخر موعد لإستلام الاستفسارات":
-                        //    tenderDates.lastEnqueriesDate = span[0] == "لا يوجد" ? null : DateOnly.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                        //    tenderDates.lastEnqueriesDateHijri = span[1];
-                        //    break;
-                        //// dublicated
-                        //case "آخر موعد لتقديم العروض":
-                        //    tenderDates.lastOfferPresentationDate = span[0] == "لا يوجد" ? null : DateOnly.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                        //    tenderDates.lastOfferPresentationDateHijri = span[1];
-                        //    tenderDates.lastOfferPresentationTime = span[2] == "لا يوجد" ? null : TimeOnly.ParseExact(span[2], "h:mm tt", CultureInfo.InvariantCulture);
-                        //    break;
-                        //// dublicated
-                        //case "تاريخ فتح العروض":
-                        //    tenderDates.offersOpeningDate = span[0] == "لا يوجد" ? null : DateTime.Parse(span[0]);
-                        //    break;
-                        //case "تاريخ فحص العروض":
-                        //    if (span[0] == "لا يوجد")
-                        //        break;
-                        //    tenderDates.offersExaminationDate = span[0] == "لا يوجد" ? null : DateOnly.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                        //    tenderDates.offersExaminationDateHijri = span[1];
-                        //    tenderDates.offersExaminationTime = span[2] == "لا يوجد" ? null : TimeOnly.ParseExact(span[2], "h:mm tt", CultureInfo.InvariantCulture);
-                        //    break; 
-                        #endregion
-                        case "التاريخ المتوقع للترسية":
-                            if (span[0] == "لا يوجد")
-                                break;
-                            tenderDates.expectedAwardDate = span[0] == "لا يوجد" ? null : DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                            tenderDates.expectedAwardDateHijri = span[1];
+                    #region un used Data
+                    //// dublicated
+                    //case "اخر موعد لإستلام الاستفسارات":
+                    //    tenderDates.lastEnqueriesDate = span[0] == "لا يوجد" ? null : DateOnly.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                    //    tenderDates.lastEnqueriesDateHijri = span[1];
+                    //    break;
+                    //// dublicated
+                    //case "آخر موعد لتقديم العروض":
+                    //    tenderDates.lastOfferPresentationDate = span[0] == "لا يوجد" ? null : DateOnly.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                    //    tenderDates.lastOfferPresentationDateHijri = span[1];
+                    //    tenderDates.lastOfferPresentationTime = span[2] == "لا يوجد" ? null : TimeOnly.ParseExact(span[2], "h:mm tt", CultureInfo.InvariantCulture);
+                    //    break;
+                    //// dublicated
+                    //case "تاريخ فتح العروض":
+                    //    tenderDates.offersOpeningDate = span[0] == "لا يوجد" ? null : DateTime.Parse(span[0]);
+                    //    break;
+                    //case "تاريخ فحص العروض":
+                    //    if (span[0] == "لا يوجد")
+                    //        break;
+                    //    tenderDates.offersExaminationDate = span[0] == "لا يوجد" ? null : DateOnly.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                    //    tenderDates.offersExaminationDateHijri = span[1];
+                    //    tenderDates.offersExaminationTime = span[2] == "لا يوجد" ? null : TimeOnly.ParseExact(span[2], "h:mm tt", CultureInfo.InvariantCulture);
+                    //    break; 
+                    #endregion
+                    case "التاريخ المتوقع للترسية":
+                        if (span[0] == "لا يوجد")
                             break;
-                        case "تاريخ بدء الأعمال / الخدمات":
-                            if (span[0] == "لا يوجد")
-                                break;
-                            tenderDates.businessStartDate = span[0] == "لا يوجد" ? null : DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                            tenderDates.businessStartDateHijri = span[1];
+                        tenderDates.expectedAwardDate = span[0] == "لا يوجد" ? null : DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                        tenderDates.expectedAwardDateHijri = span[1];
+                        break;
+                    case "تاريخ بدء الأعمال / الخدمات":
+                        if (span[0] == "لا يوجد")
                             break;
-                        case "تاريخ استحقاق خطاب تأكيد المشاركة":
-                            tenderDates.participationConfirmationLetterDate = span[0] == "لا يوجد" ? null : DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture); ;
+                        tenderDates.businessStartDate = span[0] == "لا يوجد" ? null : DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                        tenderDates.businessStartDateHijri = span[1];
+                        break;
+                    case "تاريخ استحقاق خطاب تأكيد المشاركة":
+                        tenderDates.participationConfirmationLetterDate = span[0] == "لا يوجد" ? null : DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture); ;
+                        break;
+                    case "بداية إرسال الأسئلة و الاستفسارات":
+                        if (span[0] == "لا يوجد")
                             break;
-                        case "بداية إرسال الأسئلة و الاستفسارات":
-                            if (span[0] == "لا يوجد")
-                                break;
-                            tenderDates.sendingInquiriesDate = span[0] == "لا يوجد" ? null : DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                            tenderDates.sendingInquiriesDateHijri = span[1];
-                            break;
-                        case "أقصى مدة للإجابة على الإستفسارات(أيام)":
-                            tenderDates.AnswerInquiriesInDays = int.Parse(span[0]);
-                            break;
-                        case "مكان فتح العرض":
-                            tenderDates.offersOpeningLocation = span[0];
-                            break;
-                    }
-
+                        tenderDates.sendingInquiriesDate = span[0] == "لا يوجد" ? null : DateTime.ParseExact(span[0], "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                        tenderDates.sendingInquiriesDateHijri = span[1];
+                        break;
+                    case "أقصى مدة للإجابة على الإستفسارات(أيام)":
+                        tenderDates.AnswerInquiriesInDays = int.Parse(span[0]);
+                        break;
+                    case "مكان فتح العرض":
+                        tenderDates.offersOpeningLocation = span[0];
+                        break;
                 }
-                catch (Exception ex)
-                {
 
-                    Console.WriteLine("Error_________" + ex.Message);
-                }
             }
-            GetTenderDatesList.Add(tenderDates);
-            driver.Quit();
+            catch (Exception ex)
+            {
+
+                Console.WriteLine("Error_________" + ex.Message);
+            }
         }
+        GetTenderDatesList.Add(tenderDates);
+        driver.Quit();
+
     }
     private void GetAwardingResult(string tenderID)
     {
@@ -259,10 +279,22 @@ public class ScraperService : IScraperService
                     getRelationsDetail.SupplyItemsCompetition = infoElement.Text;
                     break;
                 case "أعمال الإنشاء":
-                    getRelationsDetail.ConstructionWorks = infoElement.Text;
+                    var ConstructionWorksList = infoElement.FindElements(By.XPath("(//ol)[3]/li"));
+                    foreach (var item in ConstructionWorksList)
+                    {
+                        ConstructionWork constructionWork = new ConstructionWork();
+                        constructionWork.Name = item.Text;
+                        getRelationsDetail.ConstructionWorks?.Add(constructionWork);
+                    }
                     break;
                 case "أعمال الصيانة والتشغيل":
-                    getRelationsDetail.MaintenanceAndOperationWorks = infoElement.Text;
+                    var MaintenanceAndOperationWorkList = infoElement.FindElements(By.XPath("(//ol)[4]/li"));
+                    foreach (var item in MaintenanceAndOperationWorkList)
+                    {
+                        MaintenanceAndOperationWork maintenanceAndOperationWork = new MaintenanceAndOperationWork();
+                        maintenanceAndOperationWork.Name = item.Text;
+                        getRelationsDetail.MaintenanceAndOperationWorks?.Add(maintenanceAndOperationWork);
+                    }
                     break;
             }
         }
@@ -346,7 +378,7 @@ public class ScraperService : IScraperService
                         detailsForVisitor.OfferingMethod = spans[0];
                         break;
                     case "مطلوب ضمان الإبتدائي":
-                        detailsForVisitor.IsInsuranceRequired = (spans[0] == "لا يوجد ضمان") ? false : true;
+                        detailsForVisitor.IsPreliminaryGuaranteeRequired = (spans[0] == "لا يوجد ضمان") ? false : true;
                         break;
                     case "عنوان الضمان الإبتدائى":
                         detailsForVisitor.PreliminaryGuaranteeAddress = spans[0];

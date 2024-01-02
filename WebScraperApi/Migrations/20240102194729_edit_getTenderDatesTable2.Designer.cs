@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebScraperApi.Models.Data;
 
@@ -11,9 +12,11 @@ using WebScraperApi.Models.Data;
 namespace WebScraperApi.Migrations
 {
     [DbContext(typeof(ScrapDBContext))]
-    partial class ScrapDBContextModelSnapshot : ModelSnapshot
+    [Migration("20240102194729_edit_getTenderDatesTable2")]
+    partial class edit_getTenderDatesTable2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -337,27 +340,6 @@ namespace WebScraperApi.Migrations
                     b.ToTable("CompetitionActivities");
                 });
 
-            modelBuilder.Entity("WebScraperApi.Models.RelationsDetail.ConstructionWork", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("GetRelationsDetailId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GetRelationsDetailId");
-
-                    b.ToTable("ConstructionWorks");
-                });
-
             modelBuilder.Entity("WebScraperApi.Models.RelationsDetail.ExecutionLocation", b =>
                 {
                     b.Property<int>("Id")
@@ -390,7 +372,13 @@ namespace WebScraperApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ConstructionWorks")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Details")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MaintenanceAndOperationWorks")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SupplyItemsCompetition")
@@ -405,27 +393,6 @@ namespace WebScraperApi.Migrations
                     b.HasIndex("tenderIdString");
 
                     b.ToTable("GetRelationsDetails");
-                });
-
-            modelBuilder.Entity("WebScraperApi.Models.RelationsDetail.MaintenanceAndOperationWork", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("GetRelationsDetailId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GetRelationsDetailId");
-
-                    b.ToTable("MaintenanceAndOperationWorks");
                 });
 
             modelBuilder.Entity("WebScraperApi.Models.RelationsDetail.Region", b =>
@@ -515,17 +482,6 @@ namespace WebScraperApi.Migrations
                     b.Navigation("GetRelationsDetail");
                 });
 
-            modelBuilder.Entity("WebScraperApi.Models.RelationsDetail.ConstructionWork", b =>
-                {
-                    b.HasOne("WebScraperApi.Models.RelationsDetail.GetRelationsDetail", "GetRelationsDetail")
-                        .WithMany("ConstructionWorks")
-                        .HasForeignKey("GetRelationsDetailId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("GetRelationsDetail");
-                });
-
             modelBuilder.Entity("WebScraperApi.Models.RelationsDetail.ExecutionLocation", b =>
                 {
                     b.HasOne("WebScraperApi.Models.RelationsDetail.GetRelationsDetail", "GetRelationsDetail")
@@ -546,17 +502,6 @@ namespace WebScraperApi.Migrations
                         .IsRequired();
 
                     b.Navigation("CardBasicData");
-                });
-
-            modelBuilder.Entity("WebScraperApi.Models.RelationsDetail.MaintenanceAndOperationWork", b =>
-                {
-                    b.HasOne("WebScraperApi.Models.RelationsDetail.GetRelationsDetail", "GetRelationsDetail")
-                        .WithMany("MaintenanceAndOperationWorks")
-                        .HasForeignKey("GetRelationsDetailId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("GetRelationsDetail");
                 });
 
             modelBuilder.Entity("WebScraperApi.Models.RelationsDetail.Region", b =>
@@ -586,11 +531,7 @@ namespace WebScraperApi.Migrations
                 {
                     b.Navigation("CompetitionActivities");
 
-                    b.Navigation("ConstructionWorks");
-
                     b.Navigation("ExecutionLocations");
-
-                    b.Navigation("MaintenanceAndOperationWorks");
                 });
 #pragma warning restore 612, 618
         }

@@ -6,9 +6,11 @@ public class WebScraper : ICarterModule
     {
         app.MapGet("/api/Get", async (IDataService dataService, IScraperService scraperService) =>
         {
-            var CardsBasicData = await dataService.GetTaskAsync();
-
-          //  scraperService.GetAllRelatedData(CardsBasicData);
+            // var CardsBasicData = await dataService.GetDataFromApiAsyn();
+           //  var CardsBasicDataFromDB = await dataService.GetCardsIDsPagesFromDBAsync();
+            await scraperService.GetDataAsync();
+           // scraperService.GetRelationsDetails("%20%20aI98vrLa4XXlr4Dicx2Q==");
+           // scraperService.GetRelationsDetails("%20*@@**f7tUt3O1dpaFRkbPB4yQ==");
 
         }).WithOpenApi();
     }

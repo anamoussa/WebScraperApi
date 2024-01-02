@@ -5,7 +5,7 @@ public class GetDetailsForVisitor
     [Key]
     public int Id { get; set; }
     [ForeignKey("CardBasicData")]
-    public string tenderIdString { get; set; }
+    public string tenderIdString { get; set; } = null!;
     public virtual CardBasicData? CardBasicData { get; set; }
 
     public string? CompetitionPurpose { get; set; }

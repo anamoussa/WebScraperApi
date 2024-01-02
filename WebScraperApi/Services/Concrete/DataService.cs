@@ -9,19 +9,20 @@ public class DataService : IDataService
         _context = context;
     }
 
-    public async Task<List<CardBasicData>> GetTaskAsync()
+    public async Task<List<CardBasicData>> GetDataFromApiAsync()
     {
         List<CardBasicData> CardsBasicData = new();
         string baseUrl = "https://tenders.etimad.sa/Tender/AllSupplierTendersForVisitorAsync?";
-        int pageNumber = 1;
-        int pageSize = 4000;
+        int pageNumber = 12;
+        int pageSize = 20000;
 
         var handler = new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
-
         };
+
         using HttpClient httpClient = new(handler);
+        httpClient.Timeout = TimeSpan.FromMinutes(2);
         while (true)
         {
             string apiUrl = $"{baseUrl}pageSize={pageSize}&pageNumber={pageNumber}";
@@ -32,7 +33,7 @@ public class DataService : IDataService
                 CardsBasicDataResponse? cardsPage = Newtonsoft.Json.JsonConvert.DeserializeObject<CardsBasicDataResponse>(responseBody);
                 if (cardsPage!.Data!.Count == 0)
                     break;
-               // CardsBasicData.AddRange(cardsPage!.Data!);
+                // CardsBasicData.AddRange(cardsPage!.Data!);
                 Console.WriteLine($"Page number {pageNumber}:");
                 _context.CardBasicDatas.AddRange(cardsPage!.Data!);
                 _context.SaveChanges();
@@ -48,5 +49,16 @@ public class DataService : IDataService
         }
 
         return CardsBasicData;
+    }
+    public async Task<IEnumerable<string>> GetCardsIDsPagesFromDBAsync(int pageSize = 20000, int pageNumber = 1)
+    {
+        var cards = await _context
+            .CardBasicDatas
+            .Select(c => c.tenderIdString)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync();
+        return cards;
     }
 }

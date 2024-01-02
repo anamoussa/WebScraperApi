@@ -1,8 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using WebScraperApi.Models.AwardingResult;
-using WebScraperApi.Models.RelationsDetail;
-
-namespace WebScraperApi.Models.Data;
+﻿namespace WebScraperApi.Models.Data;
 
 public class ScrapDBContext : DbContext
 {
@@ -17,6 +13,10 @@ public class ScrapDBContext : DbContext
     public DbSet<Region> Regions { get; set; }
     public DbSet<ExecutionLocation> ExecutionLocations { get; set; }
     public DbSet<CompetitionActivity> CompetitionActivities { get; set; }
+
+    public DbSet<MaintenanceAndOperationWork> MaintenanceAndOperationWorks { get; set; }
+    public DbSet<ConstructionWork> ConstructionWorks { get; set; }
+
 
     public ScrapDBContext(DbContextOptions<ScrapDBContext> options) : base(options)
     {
