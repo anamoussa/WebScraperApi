@@ -1,6 +1,6 @@
 @WebScraperApi_HostAddress = http://localhost:5016
 
-GET {{WebScraperApi_HostAddress}}/weatherforecast/
+GET {{WebScraperApi_HostAddress}}/api/GET
 Accept: application/json
 
 ###

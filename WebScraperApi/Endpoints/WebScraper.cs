@@ -8,7 +8,7 @@ public class WebScraper : ICarterModule
         {
             var CardsBasicData = await dataService.GetTaskAsync();
 
-            scraperService.GetAllRelatedData(CardsBasicData);
+          //  scraperService.GetAllRelatedData(CardsBasicData);
 
         }).WithOpenApi();
     }

@@ -1,4 +1,4 @@
-﻿namespace WebScraperApi.Models
+﻿namespace WebScraperApi.Models.RelationsDetail
 {
     public class CompetitionActivity
     {

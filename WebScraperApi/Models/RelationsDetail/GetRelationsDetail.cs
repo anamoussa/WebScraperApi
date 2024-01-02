@@ -1,4 +1,4 @@
-﻿namespace WebScraperApi.Models;
+﻿namespace WebScraperApi.Models.RelationsDetail;
 
 public class GetRelationsDetail
 {
@@ -8,7 +8,7 @@ public class GetRelationsDetail
     public string tenderIdString { get; set; }
     public virtual CardBasicData? CardBasicData { get; set; }
 
-    public List<ExecutionLocation>? ExecutionLocations { get; set; }
+    public List<ExecutionLocation>? ExecutionLocations { get; set; } = new();
     public string? Details { get; set; }
     public List<CompetitionActivity>? CompetitionActivities { get; set; } = new();
     public string? SupplyItemsCompetition { get; set; }

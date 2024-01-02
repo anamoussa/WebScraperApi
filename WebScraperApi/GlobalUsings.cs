@@ -11,3 +11,5 @@ global using System.ComponentModel.DataAnnotations;
 global using OpenQA.Selenium.Chrome;
 global using OpenQA.Selenium;
 global using System.Globalization;
+global using WebScraperApi.Models.AwardingResult;
+global using WebScraperApi.Models.RelationsDetail;

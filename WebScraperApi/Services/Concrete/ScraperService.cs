@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Drawing;
-
-namespace WebScraperApi.Services.Concrete;
+﻿namespace WebScraperApi.Services.Concrete;
 
 public class ScraperService : IScraperService
 {
@@ -19,6 +15,7 @@ public class ScraperService : IScraperService
     }
     public void GetAllRelatedData(List<CardBasicData> CardsBasicData)
     {
+        int counter = 0;
         var tenderIDs = CardsBasicData.Select(t => t.tenderIdString).ToList();
         foreach (var tenderID in tenderIDs)
         {
@@ -28,22 +25,28 @@ public class ScraperService : IScraperService
             GetAwardingResult(tenderID);
             GetRelationsDetails(tenderID);
 
-            if (GetAwardingResultsList.Count>4 || tenderIDs.IndexOf(tenderID) == 390)
+            if (counter==10)
             {
+                var recordsToDelete = _context.CardBasicDatas
+                .Where(c => tenderIDs.Contains(c.tenderIdString))
+                .ToList();
+                _context.CardBasicDatas.RemoveRange(recordsToDelete);
+                _context.SaveChanges();
+
                 _context.CardBasicDatas.AddRange(CardsBasicData);
                 _context.GetTenderDates.AddRange(GetTenderDatesList);
                 _context.GetRelationsDetails.AddRange(GetRelationsDetailsList);
                 _context.GetAwardingResults.AddRange(GetAwardingResultsList);
                 _context.GetDetailsForVisitor.AddRange(DetailsForVisitorsList);
-
                 _context.SaveChanges();
+                counter = 0;
                 return;
             }
-            Console.WriteLine(tenderIDs.IndexOf(tenderID));
+            counter++;
+            Console.WriteLine("_______________________******_____"+tenderIDs.IndexOf(tenderID));
 
         }
     }
-
     private void GetTenderDates(string tenderID)
     {
         var url = Constants.UrlGetTenderDates + tenderID;
@@ -196,9 +199,9 @@ public class ScraperService : IScraperService
         ExecutionLocation executionLocation = new ExecutionLocation();
         List<ExecutionLocation> executionLocations = new List<ExecutionLocation>();
         getRelationsDetail.tenderIdString = tenderID;
-       // var url = Constants.UrlGetRelationsDetail + "bD%206v98V*@@**lZ9hHHRfEYDXg==";//tenderID;
-         // var url = Constants.UrlGetRelationsDetail + "*@@**0*@@**mn0y%20iTWVZYHq1Dm7KQ==";//tenderID;
-       // var url = Constants.UrlGetRelationsDetail + "1SvP6s1e2e%20NA7QGJFs6bw==";//tenderID;
+        //  var url = Constants.UrlGetRelationsDetail + "bD%206v98V*@@**lZ9hHHRfEYDXg==";//tenderID;
+        // var url = Constants.UrlGetRelationsDetail + "*@@**0*@@**mn0y%20iTWVZYHq1Dm7KQ==";//tenderID;
+        // var url = Constants.UrlGetRelationsDetail + "1SvP6s1e2e%20NA7QGJFs6bw==";//tenderID;
         var url = Constants.UrlGetRelationsDetail + tenderID;
         var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
         chromeOptions.AddArguments("--headless=new"); // comment out for testing
@@ -229,12 +232,14 @@ public class ScraperService : IScraperService
                             executionLocation.City = item.Text.Trim();
                         }
                         var Regions = item.FindElements(By.TagName("li"));
+                        List<Region> regions = new List<Region>();
                         foreach (var Regionitem in Regions)
                         {
                             Region region = new Region();
                             region.Name = Regionitem.Text;
-                            executionLocation.Regions?.Add(region);
+                            regions.Add(region);
                         }
+                        executionLocation.Regions = regions;
                         executionLocations.Add(executionLocation);
                     }
                     break;
@@ -245,8 +250,8 @@ public class ScraperService : IScraperService
                     var CompetitionActivitiesList = infoElement.FindElements(By.XPath("(//ol)[2]/li"));
                     foreach (var item in CompetitionActivitiesList)
                     {
-                        CompetitionActivity competitionActivity = new CompetitionActivity();    
-                        competitionActivity.Name=item.Text; 
+                        CompetitionActivity competitionActivity = new CompetitionActivity();
+                        competitionActivity.Name = item.Text;
                         getRelationsDetail.CompetitionActivities?.Add(competitionActivity);
                     }
                     break;
@@ -265,56 +270,8 @@ public class ScraperService : IScraperService
         driver.Quit();
         getRelationsDetail.ExecutionLocations = executionLocations;
         GetRelationsDetailsList.Add(getRelationsDetail);
-    }
-    private void GetInDepthInfo(IWebElement webElement, GetRelationsDetail getRelationsDetail)
-    {
-        try
-        {
-            var isListFounded = AreChildElementsPresent(webElement, By.CssSelector(".etd-item-info"));
-            var isSpanFounded = AreChildElementsPresent(webElement, By.TagName("span"));
-            if (!isListFounded || !isListFounded)
-            {
-                return;
-            }
-            if (isSpanFounded)
-            {
-                var span = webElement.FindElement(By.TagName("span")).Text;
-            }
-            IWebElement[]? infoItems = null;
-            if (isListFounded)
-            {
-                infoItems = webElement?.FindElements(By.TagName("li")).ToArray();
-
-                if (!infoItems.Any() || infoItems is null)
-                {
-                    return;
-                }
-                foreach (var item in infoItems)
-                {
-                    var itemTxt = item.Text;
-                    GetInDepthInfo(item, getRelationsDetail);
-                }
-            }
-
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-            return;
-        }
-    }
-    private bool AreChildElementsPresent(IWebElement parentElement, By by)
-    {
-        try
-        {
-            var childElements = parentElement.FindElements(by);
-
-            return childElements.Count > 0;
-        }
-        catch (NoSuchElementException)
-        {
-            return false;
-        }
+        //_context.GetRelationsDetails.Add(getRelationsDetail);
+        //_context.SaveChanges();
     }
     private void GetDetailsForVisitor(string tenderID)
     {
@@ -350,9 +307,17 @@ public class ScraperService : IScraperService
                 switch (txt)
                 {
                     case "الغرض من المنافسة":
+                        var toBeReplaced = "<i class=\"readLess\"> ...عرض الأقل...</i>";
                         IWebElement purposeSpan = driver.FindElement(By.Id("purposeSpan"));
-                        string purposeText = purposeSpan.GetAttribute("innerHTML");
-                        detailsForVisitor.CompetitionPurpose = purposeText;
+                        var SpanText = purposeSpan.GetAttribute("innerHTML");
+                        if (SpanText.Contains(toBeReplaced))
+                        {
+                            detailsForVisitor.CompetitionPurpose = SpanText.Replace(toBeReplaced, "");
+                        }
+                        else
+                        {
+                            detailsForVisitor.CompetitionPurpose = SpanText;
+                        }
                         break;
                     case "حالة المنافسة":
                         detailsForVisitor.CompetitionStatus = spans[0];
@@ -406,47 +371,4 @@ public class ScraperService : IScraperService
         driver.Quit();
         DetailsForVisitorsList.Add(detailsForVisitor);
     }
-    private void GetRelationsDetailsold(string tenderID)
-    {
-        GetRelationsDetail getRelationsDetail = new GetRelationsDetail();
-        getRelationsDetail.tenderIdString = tenderID;
-        var url = Constants.UrlGetRelationsDetail + "1SvP6s1e2e%20NA7QGJFs6bw==";//tenderID;
-        var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
-        chromeOptions.AddArguments("--headless=new"); // comment out for testing
-        using var driver = new ChromeDriver(chromeOptions);
-        driver.Navigate().GoToUrl(url);
-
-        IList<IWebElement> listItems = driver.FindElements(By.CssSelector("ul.list-group.form-details-list li.list-group-item"));
-        foreach (IWebElement listItem in listItems)
-        {
-            var titleElement = listItem.FindElement(By.CssSelector(".etd-item-title")).Text;
-            var infoElement = listItem.FindElement(By.CssSelector(".etd-item-info"));
-            GetInDepthInfo(infoElement, getRelationsDetail);
-            switch (titleElement)
-            {
-                case "مكان التنفيذ":
-                    //  getRelationsDetail.ExecutionLocation = infoElement.Text;
-                    break;
-                case "التفاصيل":
-                    getRelationsDetail.Details = infoElement.Text;
-                    break;
-                case "نشاط المنافسة":
-                  //  getRelationsDetail.CompetitionActivity = infoElement.Text;
-                    break;
-                case "تشمل المنافسة على بنود توريد":
-                    getRelationsDetail.SupplyItemsCompetition = infoElement.Text;
-                    break;
-                case "أعمال الإنشاء":
-                    getRelationsDetail.ConstructionWorks = infoElement.Text;
-                    break;
-                case "أعمال الصيانة والتشغيل":
-                    getRelationsDetail.MaintenanceAndOperationWorks = infoElement.Text;
-                    break;
-            }
-        }
-        // Close the browser
-        driver.Quit();
-        GetRelationsDetailsList.Add(getRelationsDetail);
-    }
-
 }
