@@ -23,7 +23,7 @@ public class ScraperService : IScraperService
     }
     public async Task GetDataAsync()
     {
-        for (int i = 6; i < 2562; i++)
+        for (int i = 15; i < 2562; i++)
         {
             await Console.Out.WriteLineAsync("*********page Number  " + i + "  **********************");
             var CardsBasicDataFromDB = await _service.GetCardsIDsPagesFromDBAsync(100, i);
@@ -147,64 +147,72 @@ public class ScraperService : IScraperService
     }
     private async Task  GetAwardingResult(string tenderID)
     {
-       await Task.Run(() =>
+        try
         {
-            GetAwardingResult awardingResult = new GetAwardingResult();
-            OfferApplicant offerApplicant = null;
-            List<OfferApplicant> offerApplicants = new List<OfferApplicant>();
-            AwardedSupplier awardedSupplier = null;
-            List<AwardedSupplier> awardedSuppliers = new List<AwardedSupplier>();
-            awardingResult.tenderIdString = tenderID;
-            var url = Constants.UrlGetAwardingResult + tenderID;
-            var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
-            chromeOptions.AddArguments("--headless=new"); // comment out for testing
-            using var driver = new ChromeDriver(chromeOptions);
-            driver.Navigate().GoToUrl(url);
-            try
+            await Task.Run(() =>
             {
-                IWebElement element2 = driver.FindElement(By.ClassName("card-body"));
-                var test1 = element2.Text;
-                return;
-            }
-            catch (Exception) { }
-
-            IWebElement OfferApplicantTable = driver.FindElement(By.XPath("//table[@summary='desc']"));
-            IList<IWebElement> rows = OfferApplicantTable.FindElements(By.TagName("tr"));
-            foreach (IWebElement row in rows)
-            {
-                IList<IWebElement> cells = row.FindElements(By.TagName("td"));
-                if (cells.Count > 0)
+                GetAwardingResult awardingResult = new GetAwardingResult();
+                OfferApplicant offerApplicant = null;
+                List<OfferApplicant> offerApplicants = new List<OfferApplicant>();
+                AwardedSupplier awardedSupplier = null;
+                List<AwardedSupplier> awardedSuppliers = new List<AwardedSupplier>();
+                awardingResult.tenderIdString = tenderID;
+                var url = Constants.UrlGetAwardingResult + tenderID;
+                var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
+                chromeOptions.AddArguments("--headless=new"); // comment out for testing
+                using var driver = new ChromeDriver(chromeOptions);
+                driver.Navigate().GoToUrl(url);
+                try
                 {
-                    offerApplicant = new OfferApplicant();
-                    offerApplicant.Supplier_name = cells[0].Text;
-                    offerApplicant.Financial_offer = double.Parse(cells[1].Text);
-                    offerApplicant.IsAccepted = cells[2].Text == "مطابق" ? true : false;
-                    offerApplicants.Add(offerApplicant!);
-
+                    IWebElement element2 = driver.FindElement(By.ClassName("card-body"));
+                    var test1 = element2.Text;
+                    return;
                 }
-            }
+                catch (Exception) { }
 
-            var awardedSupplierTable = driver.FindElements(By.XPath("//table[@summary='desc']")).Skip(1).Single();
-            IList<IWebElement> awardedSupplierTableRows = awardedSupplierTable.FindElements(By.TagName("tr"));
-            foreach (IWebElement row in awardedSupplierTableRows)
-            {
-                IList<IWebElement> cells = row.FindElements(By.TagName("td"));
-                if (cells.Count > 0)
+                IWebElement OfferApplicantTable = driver.FindElement(By.XPath("//table[@summary='desc']"));
+                IList<IWebElement> rows = OfferApplicantTable.FindElements(By.TagName("tr"));
+                foreach (IWebElement row in rows)
                 {
-                    awardedSupplier = new AwardedSupplier();
-                    awardedSupplier.Supplier_name = cells[0].Text;
-                    awardedSupplier.Financial_offer = double.Parse(cells[1].Text);
-                    awardedSupplier.Award_value = double.Parse(cells[2].Text);
-                    awardedSuppliers.Add(awardedSupplier!);
+                    IList<IWebElement> cells = row.FindElements(By.TagName("td"));
+                    if (cells.Count > 0)
+                    {
+                        offerApplicant = new OfferApplicant();
+                        offerApplicant.Supplier_name = cells[0].Text;
+                        offerApplicant.Financial_offer = double.Parse(cells[1].Text);
+                        offerApplicant.IsAccepted = cells[2].Text == "مطابق" ? true : false;
+                        offerApplicants.Add(offerApplicant!);
+
+                    }
                 }
 
-            }
-            awardingResult.awardedSuppliers = awardedSuppliers;
-            awardingResult.offerApplicants = offerApplicants;
+                var awardedSupplierTable = driver.FindElements(By.XPath("//table[@summary='desc']")).Skip(1).Single();
+                IList<IWebElement> awardedSupplierTableRows = awardedSupplierTable.FindElements(By.TagName("tr"));
+                foreach (IWebElement row in awardedSupplierTableRows)
+                {
+                    IList<IWebElement> cells = row.FindElements(By.TagName("td"));
+                    if (cells.Count > 0)
+                    {
+                        awardedSupplier = new AwardedSupplier();
+                        awardedSupplier.Supplier_name = cells[0].Text;
+                        awardedSupplier.Financial_offer = double.Parse(cells[1].Text);
+                        awardedSupplier.Award_value = double.Parse(cells[2].Text);
+                        awardedSuppliers.Add(awardedSupplier!);
+                    }
 
-            GetAwardingResultsList.Add(awardingResult);
-        });
-        
+                }
+                awardingResult.awardedSuppliers = awardedSuppliers;
+                awardingResult.offerApplicants = offerApplicants;
+
+                GetAwardingResultsList.Add(awardingResult);
+
+            });
+        }
+        catch (Exception ex)
+        {
+            LogToFile($"error msg :{ex.Message} \n From GetAwardingResult {tenderID}");
+        }
+
     }
     private void GetRelationsDetails(string tenderID)
     {
@@ -395,7 +403,30 @@ public class ScraperService : IScraperService
         driver.Quit();
         DetailsForVisitorsList.Add(detailsForVisitor);
     }
+    static void LogToFile( string data)
+    {
+        try
+        {
+            string logFileName = "log.txt";
+
+            string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, logFileName);
+
+            // Use StreamWriter to append data to the file
+            using (StreamWriter sw = File.AppendText(logFilePath))
+            {
+                // Write the data to the file
+                sw.WriteLine($"{DateTime.Now}: {data}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions if needed
+            Console.WriteLine($"Error logging to file: {ex.Message}");
+        }
+    }
 }
+
+
 //OpenQA.Selenium.WebDriverException
 //  HResult = 0x80131500
 //  Message=The HTTP request to the remote WebDriver server for URL http://localhost:6664/session timed out after 60 seconds.

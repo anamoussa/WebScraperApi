@@ -13,7 +13,7 @@ public class DataService : IDataService
     {
         List<CardBasicData> CardsBasicData = new();
         string baseUrl = "https://tenders.etimad.sa/Tender/AllSupplierTendersForVisitorAsync?";
-        int pageNumber = 12;
+        int pageNumber = 1;
         int pageSize = 20000;
 
         var handler = new HttpClientHandler
@@ -35,11 +35,12 @@ public class DataService : IDataService
                     break;
                 // CardsBasicData.AddRange(cardsPage!.Data!);
                 Console.WriteLine($"Page number {pageNumber}:");
+                var tobeinsertedids = cardsPage!.Data!.Select(o => o.tenderIdString).ToList();
+                var existitems = _context.CardBasicDatas.Where(o => tobeinsertedids.Contains(o.tenderIdString));
+                _context.CardBasicDatas.RemoveRange(existitems);
                 _context.CardBasicDatas.AddRange(cardsPage!.Data!);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 pageNumber++;
-                //if (CardsBasicData.Count > 499)
-                //    break;
             }
             else
             {

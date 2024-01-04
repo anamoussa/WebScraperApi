@@ -1,10 +1,14 @@
 
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore;
+using System.Net;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ScrapDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DBConnection"))
 );
@@ -16,11 +20,12 @@ builder.Services.AddProblemDetails();
 builder.Services.AddCarter();
 var app = builder.Build();
 
+ 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    //app.UseSwagger();
+    //app.UseSwaggerUI();
     app.SeedingDB();
 
 }
