@@ -15,6 +15,6 @@ public class GetDetailsForVisitor
     public string? OfferingMethod { get; set; }
     public bool IsPreliminaryGuaranteeRequired { get; set; }
     public string? PreliminaryGuaranteeAddress { get; set; }
-    public double FinalGuarantee { get; set; }
+    public double? FinalGuarantee { get; set; }
     public string? AwardNumber { get; set; }
 }
