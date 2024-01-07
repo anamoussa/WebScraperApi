@@ -26,5 +26,5 @@ public class GetTenderDate
     public DateTime? sendingInquiriesDate { get; set; }
     public string sendingInquiriesDateHijri { get; set; } = string.Empty;
     public string offersOpeningLocation { get; set; } = string.Empty;
-    public int AnswerInquiriesInDays { get; set; }
+    public int? AnswerInquiriesInDays { get; set; }
 }

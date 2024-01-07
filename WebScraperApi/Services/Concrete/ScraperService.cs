@@ -3,6 +3,7 @@ using static OpenQA.Selenium.VirtualAuth.VirtualAuthenticatorOptions;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System;
+using System.Net.NetworkInformation;
 
 namespace WebScraperApi.Services.Concrete;
 
@@ -22,16 +23,36 @@ public class ScraperService : IScraperService
         _service = service;
 
     }
+    int resetDriver = 0;
     public async Task GetDataAsync()
     {
+
         //max page 2562
-        for (int i = 28; i < 2562; i++)
+        for (int i = 77; i < 101; i++)
         {
             await Console.Out.WriteLineAsync("*********page Number  " + i + "  **********************");
             var CardsBasicDataFromDB = await _service.GetCardsIDsPagesFromDBAsync(100, i);
             await GetAllRelatedData(CardsBasicDataFromDB.ToList());
+            resetDriver++;
+            if(resetDriver==3)
+            {
+                WebDriverSingleton.Dispose();
+                resetDriver = 0;
+            }
 
         }
+        //var nulldates =_context.GetTenderDates.Where(o=>o.expectedAwardDate==null).ToList();
+        //var nulldatesIds = nulldates.Select(d => d.tenderIdString).ToList();
+        //foreach (var id in nulldatesIds)
+        //{
+        //    await GetTenderDates(id);
+        //    Console.WriteLine("_______________________******_____" + nulldatesIds.IndexOf(id)+ "of"+ nulldatesIds.Count);
+
+        //}
+        //_context.GetTenderDates.RemoveRange(nulldates);
+        //_context.GetTenderDates.AddRange(GetTenderDatesList);
+        //await _context.SaveChangesAsync();
+
 
         //loop over pagination 
         //select ids
@@ -42,33 +63,33 @@ public class ScraperService : IScraperService
     {
         foreach (var tenderID in CardsIDs)
         {
-            await GetTenderDates(tenderID); //page 28
-            await GetAwardingResult(tenderID); //page 28
-            await GetRelationsDetails(tenderID); //28
-            await GetDetailsForVisitor(tenderID);//4-27 
+            await GetTenderDates(tenderID); //page 48-101
+            await GetAwardingResult(tenderID); //page 48-101
+         //  await GetRelationsDetails(tenderID); //28//100
+            await GetDetailsForVisitor(tenderID);//4-27 48-101
             Console.WriteLine("_______________________******_____" + CardsIDs.IndexOf(tenderID));
         }
          _context.GetTenderDates.AddRange(GetTenderDatesList);
         _context.GetAwardingResults.AddRange(GetAwardingResultsList);
-        _context.GetRelationsDetails.AddRange(GetRelationsDetailsList);
+     // _context.GetRelationsDetails.AddRange(GetRelationsDetailsList);
         _context.GetDetailsForVisitor.AddRange(DetailsForVisitorsList);
-        _context.SaveChanges();
-         GetTenderDatesList = new();
+     await   _context.SaveChangesAsync();
+        GetTenderDatesList = new();
         GetAwardingResultsList = new();
-        GetRelationsDetailsList = new();
+       // GetRelationsDetailsList = new();
         DetailsForVisitorsList = new();
     }
     private async Task GetTenderDates(string tenderID)
     {
+        await Console.Out.WriteLineAsync("GetTenderDates");
         try
         {
             await Task.Run(() =>
                     {
                         GetTenderDate tenderDates = new GetTenderDate();
-                        var url = Constants.UrlGetTenderDates + " pxF826ya2LsY5hHFCzA1w=="; //tenderID;
+                        var url = Constants.UrlGetTenderDates + tenderID;
                         IWebDriver driver2 = WebDriverSingleton.Instance.Driver;
                         driver2.Navigate().GoToUrl(url);
-                        // WebDriverWait webDriverWait = new WebDriverWait(driver, TimeSpan.FromMinutes(2));
                         tenderDates.tenderIdString = tenderID;
                         var dates = driver2.FindElements(By.CssSelector("li.list-group-item"));
                         foreach (var date in dates)
@@ -127,18 +148,27 @@ public class ScraperService : IScraperService
                                         tenderDates.sendingInquiriesDateHijri = span[1];
                                         break;
                                     case "أقصى مدة للإجابة على الإستفسارات(أيام)":
-                                        tenderDates.AnswerInquiriesInDays = int.Parse(span[0]);
+
+                                        if (int.TryParse(span[0], out int parsedValue))
+                                        {
+                                            tenderDates.AnswerInquiriesInDays = parsedValue;
+                                        }
+                                        else
+                                        {
+                                            tenderDates.AnswerInquiriesInDays = null;
+                                        }
                                         break;
                                     case "مكان فتح العرض":
                                         tenderDates.offersOpeningLocation = span[0];
                                         break;
+                                        default : break;
                                 }
 
                             }
                             catch (Exception ex)
                             {
 
-                                Console.WriteLine("Error_________" + ex.Message);
+                                Console.WriteLine("GetTenderDates Error_________" + ex.Message);
                             }
                         }
                         GetTenderDatesList.Add(tenderDates);
@@ -148,10 +178,19 @@ public class ScraperService : IScraperService
         catch (Exception ex)
         {
             LogToFile($"\"{tenderID}\"\n", "GetTenderDates.txt");
+            if (IsInternetAvailable())
+            {
+                WebDriverSingleton.Dispose();
+            }
+            else
+            {
+                Console.WriteLine("No internet connection.");
+            }
         }
     }
     private async Task GetAwardingResult(string tenderID)
     {
+        await Console.Out.WriteLineAsync("GetAwardingResult");
         try
         {
             await Task.Run(() =>
@@ -171,7 +210,9 @@ public class ScraperService : IScraperService
                     var test1 = element2.Text;
                     return;
                 }
-                catch (Exception) { }
+                catch (Exception ex) {
+                    Console.WriteLine("GetAwardingResult" +ex.Message +"data not found ");
+                }
 
                 IWebElement OfferApplicantTable = driver2.FindElement(By.XPath("//table[@summary='desc']"));
                 IList<IWebElement> rows = OfferApplicantTable.FindElements(By.TagName("tr"));
@@ -211,6 +252,14 @@ public class ScraperService : IScraperService
         catch (Exception ex)
         {
             LogToFile($"\"{tenderID}\"\n", "GetAwardingResult.txt");
+            if (IsInternetAvailable())
+            {
+                WebDriverSingleton.Dispose();
+            }
+            else
+            {
+                Console.WriteLine("No internet connection.");
+            }
         }
 
     }
@@ -314,6 +363,14 @@ public class ScraperService : IScraperService
         catch (Exception ex)
         {
             LogToFile($"\"{tenderID}\"\n", "GetRelationsDetails.txt");
+            if (IsInternetAvailable())
+            {
+                WebDriverSingleton.Dispose();
+            }
+            else
+            {
+                Console.WriteLine("No internet connection.");
+            }
         }
     }
     private async Task GetDetailsForVisitor2(string tenderID)
@@ -423,6 +480,7 @@ public class ScraperService : IScraperService
     }
     private async Task GetDetailsForVisitor(string tenderID)
     {
+        await Console.Out.WriteLineAsync("GetDetailsForVisitor");
         try
         {
             GetDetailsForVisitor detailsForVisitor = new GetDetailsForVisitor();
@@ -481,6 +539,14 @@ public class ScraperService : IScraperService
         catch (Exception ex)
         {
             LogToFile($"\"{tenderID}\"\n", "GetDetailsForVisitor.txt");
+            if (IsInternetAvailable())
+            {
+                WebDriverSingleton.Dispose();
+            }
+            else
+            {
+                Console.WriteLine("No internet connection.");
+            }
         }
     }
     private void ProcessCompetitionPurpose(GetDetailsForVisitor detailsForVisitor, IWebDriver driver)
@@ -509,6 +575,22 @@ public class ScraperService : IScraperService
         {
             string trimmedString = durationText.TrimEnd("سنة".ToCharArray());
             detailsForVisitor.ContractDuration = double.Parse(trimmedString) * 365;
+        }
+    }
+    static bool IsInternetAvailable()
+    {
+        try
+        {
+            using (Ping ping = new Ping())
+            {
+                PingReply reply = ping.Send("www.google.com", 3000); // Adjust the timeout as needed
+
+                return (reply != null && reply.Status == IPStatus.Success);
+            }
+        }
+        catch (PingException)
+        {
+            return false;
         }
     }
     private void LogToFile(string data, string logFileName)

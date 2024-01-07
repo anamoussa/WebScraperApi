@@ -1,4 +1,4 @@
-﻿public class WebDriverSingleton
+﻿public class WebDriverSingleton 
 {
     private static WebDriverSingleton instance;
     private static object lockObject = new object();
@@ -34,5 +34,13 @@
     public IWebDriver Driver
     {
         get { return driver; }
+    }
+
+    public static void Dispose()
+    {
+        driver.Quit();
+        var chromeOptions = new ChromeOptions() { AcceptInsecureCertificates = true };
+        chromeOptions.AddArguments("--headless=new"); // comment out for testing
+        driver = new ChromeDriver(chromeOptions);
     }
 }
